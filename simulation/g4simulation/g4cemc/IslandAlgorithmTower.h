@@ -46,4 +46,8 @@ class IslandAlgorithmTower {
         static int maxEtaBin;
         static void ExitOnIDMismatch(int id1, int id2);
 };
+
+bool operator<(const IslandAlgorithmTower& a, const IslandAlgorithmTower& b);
+bool operator==(const IslandAlgorithmTower& a, const IslandAlgorithmTower& b);
+
 #endif
