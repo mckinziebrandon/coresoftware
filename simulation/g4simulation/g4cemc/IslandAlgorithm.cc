@@ -10,6 +10,10 @@
 // C++ includes.
 #include <iostream>
 
+#define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
+#include <boost/foreach.hpp>
+#define foreach BOOST_FOREACH
+
 namespace IslandAlgorithm {
     using std::cout;
     using std::endl;

@@ -4,6 +4,13 @@
 #include "IslandAlgorithm.h" // Use this instead of PHMakeGroups.h
 #include "IslandAlgorithmTower.h"
 
+// G4CEMC includes.
+#include "RawTower.h"
+#include "RawTowerGeomContainer.h"
+#include "RawTowerContainer.h"
+#include "RawClusterv1.h"
+#include "RawClusterContainer.h"
+
 #define BOOST_NO_HASH // Our version of boost.graph is incompatible with GCC-4.3 w/o this flag
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
@@ -11,12 +18,6 @@
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
-// G4CEMC includes.
-#include "g4cemc/RawTower.h"
-#include "g4cemc/RawTowerGeomContainer.h"
-#include "g4cemc/RawTowerContainer.h"
-#include "RawClusterv1.h"
-#include "g4cemc/RawClusterContainer.h"
 
 const std::string PATH = "~/bmckinz/RawClusterBuilderIA/rootFiles/";
 typedef std::multimap<int, IslandAlgorithmTower>             TowerMap;

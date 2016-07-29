@@ -2,18 +2,16 @@
 #define ISLANDALGORITHM_H_
 
 #include "IslandAlgorithmTower.h"
-#include "RawTower.h"
-#include "RawTowerGeomContainer.h"
-#include "RawTowerContainer.h"
 
 #include <map>
 #include <set>
-
+#include <list>
 
 
 class RawTower;
 class RawTowerGeomContainer;
-class RawTower;
+class RawTowerContainer;
+
 
 namespace IslandAlgorithm {
     using std::cout;

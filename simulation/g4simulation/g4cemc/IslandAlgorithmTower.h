@@ -4,10 +4,13 @@
 
 // C++ includes.
 #include <iostream>
+#include <cmath>
 // Local includes.
-class PHG4CEmcTestBeamDetector;
-class PHG4Hit;
-class PHG4HitContainer;
+#include "RawTowerDefs.h"
+
+class RawTower;
+class RawTowerGeomContainer;
+class RawTowerContainer;
 
 
 class IslandAlgorithmTower {
