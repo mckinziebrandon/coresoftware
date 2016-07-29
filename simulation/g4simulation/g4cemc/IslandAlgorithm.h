@@ -1,14 +1,19 @@
 #ifndef ISLANDALGORITHM_H_
 #define ISLANDALGORITHM_H_
 
+#include "IslandAlgorithmTower.h"
+#include "RawTower.h"
+#include "RawTowerGeomContainer.h"
+#include "RawTowerContainer.h"
+
 #include <map>
 #include <set>
-#include <g4cemc/RawTower.h>
-#include <g4cemc/RawTowerContainer.h>
-#include <g4cemc/RawTowerGeomContainer.h>
 
-#include "IslandAlgorithmTower.h"
 
+
+class RawTower;
+class RawTowerGeomContainer;
+class RawTower;
 
 namespace IslandAlgorithm {
     using std::cout;

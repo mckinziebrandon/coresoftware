@@ -1,5 +1,14 @@
-#ifndef ISLANDALGORITHM_H_
-#define ISLANDALGORITHM_H_
+
+
+#include "IslandAlgorithm.h"
+
+// Local includes.
+#include "RawTower.h"
+#include "RawTowerGeomContainer.h"
+#include "RawTowerContainer.h"
+
+// C++ includes.
+#include <iostream>
 
 namespace IslandAlgorithm {
     using std::cout;
@@ -209,5 +218,3 @@ namespace IslandAlgorithm {
     }
 
 }
-
-#endif

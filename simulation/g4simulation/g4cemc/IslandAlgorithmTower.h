@@ -5,9 +5,9 @@
 // C++ includes.
 #include <iostream>
 // Local includes.
-#include "g4cemc/RawTower.h"
-#include "g4cemc/RawTowerGeomContainer.h"
-#include "g4cemc/RawTowerContainer.h"
+class PHG4CEmcTestBeamDetector;
+class PHG4Hit;
+class PHG4HitContainer;
 
 
 class IslandAlgorithmTower {

@@ -1,11 +1,12 @@
 
+#include "IslandAlgorithmTower.h"
+// Local includes.
+#include "RawTower.h"
+#include "RawTowerGeomContainer.h"
+#include "RawTowerContainer.h"
 
 // C++ includes.
 #include <iostream>
-// Local includes.
-#include "g4cemc/RawTower.h"
-#include "g4cemc/RawTowerGeomContainer.h"
-#include "g4cemc/RawTowerContainer.h"
 
 
 int IslandAlgorithmTower::maxPhiBin = -10;
