@@ -53,6 +53,10 @@ libcemc_la_SOURCES = \
   RawClusterBuilder_Dict.cc \
   RawClusterBuilderv1.cc \
   RawClusterBuilderv1_Dict.cc \
+  RawClusterBuilderIA.cc \
+  RawClusterBuilderIA_Dict.cc \
+  IslandAlgorithm.cc \
+  IslandAlgorithmTower.cc \
   RawClusterBuilderFwd.cc \
   RawClusterBuilderFwd_Dict.cc \
   RawTowerBuilder.cc \
