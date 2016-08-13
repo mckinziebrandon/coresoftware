@@ -19,17 +19,17 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
-const std::string PATH = "~/bmckinz/RawClusterBuilderIA/rootFiles/";
+const std::string PATH = "~/bmckinz/RawClusterBuilderIA/rootFiles";
 typedef std::multimap<int, IslandAlgorithmTower>             TowerMap;
 typedef std::pair<const int, IslandAlgorithmTower>           TowerPair;
 typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
 
 /* ------------------------------------------------------ *
-   RawClusterBuilderIA::RawClusterBuilderIA()
+   RawClusterBuilderIA::RawClusterBuilderIA()                    
    1. Call parent constructor (SubsysReco).                     
    2. Initialize values of any desired attributes.
  * -------------------------------------------------------- */
-RawClusterBuilderIA::RawClusterBuilderIA(const std::string& name)
+RawClusterBuilderIA::RawClusterBuilderIA(const std::string& name) 
     : SubsysReco(name),
       _clusters(NULL),
       _min_tower_e(0.0),
@@ -38,7 +38,7 @@ RawClusterBuilderIA::RawClusterBuilderIA(const std::string& name)
       _detector("NONE") {}
 
 /* ----------------------------------------------------- *
-   RawClusterBuilderIA::InitRun()
+   RawClusterBuilderIA::InitRun()                          
    1. Setup clusterNode and _clusters object. (CreateNodes)
    2. Create ROOT objects for file IO (temporary).
  * ----------------------------------------------------- */
@@ -50,21 +50,28 @@ int RawClusterBuilderIA::Init(PHCompositeNode* topNode) {
         throw;
     }
 
-    std::cout << " - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - "     << std::endl;
-    std::cout << "[RawClusterBuilderIA::Init] PARTICLE TYPE IS " << _particleType   << std::endl;
-    std::cout << " - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - - "   << std::endl;
+    std::cout << " - - - - - - - - - - - - - - - - - - - - - - -  - "   << std::endl;
+    std::cout << __PRETTY_FUNCTION__                                    << std::endl;
+    std::cout << "Particle type:\t" << _particleType                    << std::endl;
+    std::cout << "ClusterSimple:\t" << std::boolalpha << _clusterSimple << std::endl;
+    std::cout << "Event number:\t"  << _iEvent                          << std::endl;
+    std::cout << "Seed thresh:\t"   << _min_tower_e                     << std::endl;
+    std::cout << "Generated PT:\t"  << _genPT                           << std::endl;
+    std::cout << " - - - - - - - - - - - - - - - - - - - - - - -  - "   << std::endl;
 
-    _fileName   = Form("%srcb_%s_%dGeV.root", PATH.c_str(), _particleType.c_str(), (int)(_genPT*10));
+    std::string prefix = _clusterSimple ? "simple_rcb" : "rcb";
+    _fileName   = Form("%s/%s_%s_%dGeV.root", PATH.c_str(), prefix.c_str(), _particleType.c_str(), (int)(_genPT*10));
     _file       = new TFile(_fileName.c_str(),"RECREATE"); 
-    gROOT->ProcessLine("#include <vector>");
+    gROOT->ProcessLine("#include <vector>"); // not entirely sure why this is necessary.
 
     std::string varList;
-    varList     = "iEvent:towerID:clusterID:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi";
+    varList     = "iEvent:seedThresh:towerID:clusterID:energy:ET:eta:phi:ieta:iphi:nBinsEta:nBinsPhi";
     ntp_tower   = new TNtuple("ntp_tower", "tower values", varList.data());
 
     _tCluster = new TTree("tCluster", "cluster tree");
     _tCluster->Branch("towerIDs",  &_towerIDs);
     _tCluster->Branch("iEvent", &_iEvent);
+    _tCluster->Branch("seedThresh", &_min_tower_e);
     _tCluster->Branch("clusterID", &_clusterID);
     _tCluster->Branch("genPT", &_genPT);
     _tCluster->Branch("recoEnergy", &_energy);
@@ -78,7 +85,7 @@ int RawClusterBuilderIA::Init(PHCompositeNode* topNode) {
 }
 
 /* ------------------------------------------------------------ *
-   RawClusterBuilderIA::process_event(...)
+   RawClusterBuilderIA::process_event(...)                         
    1. Clear containers of any previous event info.
    2. Grab _towers and _towerGeom from the node tree.
    3. Obtain clusters from IslandAlgorithm functions.
@@ -86,6 +93,7 @@ int RawClusterBuilderIA::Init(PHCompositeNode* topNode) {
    5. Calculate cluster quantities (e.g. energy).
  * ------------------------------------------------------------ */
 int RawClusterBuilderIA::process_event(PHCompositeNode *topNode) {
+    std::cout << "Entering function: " << __PRETTY_FUNCTION__ << std::endl;
     namespace IAlgorithm = IslandAlgorithm;  
     _towerIDs.clear();
     _energyVec.clear();
@@ -105,13 +113,13 @@ int RawClusterBuilderIA::process_event(PHCompositeNode *topNode) {
     if (!_towerGeom) return _NodeError(nodeName, Fun4AllReturnCodes::ABORTEVENT);
 
     // Store the number of bins in phi as a static value; No need to repeatedly set.
-    IslandAlgorithmTower::setMaxPhiBin(_towerGeom->get_phibins());
-    IslandAlgorithmTower::setMaxEtaBin(_towerGeom->get_etabins());
+    //IslandAlgorithmTower::setMaxPhiBin(_towerGeom->get_phibins());
+    //IslandAlgorithmTower::setMaxEtaBin(_towerGeom->get_etabins());
 
     // ------------------------------------------------------------------------------------------
     // The Island Algorithm:
 
-    set_threshold_energy(0.1);
+    //set_threshold_energy(0.1);
     // 1. Construct list of seed towers, defined as having energy above some threshold. 
     std::list<IslandAlgorithmTower> seedTowers     = IAlgorithm::GetSeedTowers(_towers, _towerGeom, _min_tower_e);
     // 2. Cluster the towers via searching method along eta and phi from each seed.
@@ -330,7 +338,7 @@ int RawClusterBuilderIA::_NodeError(std::string nodeName, int retCode) {
 }
 
 void RawClusterBuilderIA::_PrintCluster(TowerPair towerPair) {
-    std::cout << "RawClusterBuilderIA id: " << (towerPair.first)
+    std::cout << "RawClusterBuilderIA id: " << (towerPair.first) 
         << " Tower: " << " (iEta,iPhi) = (" << towerPair.second.getBinEta() 
         << "," << towerPair.second.getBinPhi() << ") " << " (eta,phi,e) = (" 
         << towerPair.second.getEtaCenter() << ","
@@ -352,6 +360,7 @@ void RawClusterBuilderIA::_FillTowerTree(TowerMap clusteredTowers) {
         IslandAlgorithmTower tower = towerPair.second;
         ntp_tower->Fill(
                 _iEvent,
+                _min_tower_e,
                 tower.getID(), 
                 clusterID, 
                 tower.getEnergy(), 
@@ -394,13 +403,13 @@ void RawClusterBuilderIA::_FillClusterTree() {
             _towerIDs.push_back((int) towIDEnergy.first);
         }
 
-        _clusterID = rawCluster->get_id();
-        _energy = _energyVec[i];
-        _ET = _ETVec[i];
-        _eta = _etaVec[i];
-        _phi = _phiVec[i];
-        _nClusters = _clusters->size();
-        _nTowers = rawCluster->getNTowers();
+        _clusterID  = rawCluster->get_id();
+        _energy     = _energyVec[i];
+        _ET         = _ETVec[i];
+        _eta        = _etaVec[i];
+        _phi        = _phiVec[i];
+        _nClusters  = _clusters->size();
+        _nTowers    = rawCluster->getNTowers();
 
         _tCluster->Fill();
     }
