@@ -1,5 +1,3 @@
-
-
 #include "IslandAlgorithm.h"
 
 // Local includes.
@@ -18,6 +16,9 @@ namespace IslandAlgorithm {
     using std::cout;
     using std::endl;
 
+    // Set of towerIDs to ensure towers only associated with one cluster.
+    std::set<int> usedTowerIDs;
+    int numDoubleCountsAvoided = 0; 
 
     /* ------------------------------------------------------------------------------------------ *
        1.   The island algorithm starts by a search for seeds. Seeds are defined as                
@@ -25,6 +26,7 @@ namespace IslandAlgorithm {
      * ------------------------------------------------------------------------------------------ */
     std::list<IslandAlgorithmTower> GetSeedTowers(RTContainer* _towers, RTGeomContainer* _towerGeom, float _threshold) {
 
+        typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
         // Collect all towers above threshold.
         std::list<IslandAlgorithmTower> seedTowers;
         foreach (RawTowerPair& rawTowerPair, _towers->getTowers()) {
@@ -38,8 +40,8 @@ namespace IslandAlgorithm {
 
         // Find towers with higher-energy adjacent towers.(aka bad seeds)
         std::set<IslandAlgorithmTower> badSeeds;
-        seedTowers.sort(lessEnergy);
-        // Todo: this could _definitely_ be optimized. 
+        seedTowers.sort(_LessEnergy);
+        // TODO: this could _definitely_ be optimized. 
         foreach (IslandAlgorithmTower& tower1, seedTowers) {
             foreach (IslandAlgorithmTower& tower2, seedTowers) {
                 if (tower1.isAdjacent(tower2) && tower1.getEnergy() < tower2.getEnergy()) {
@@ -54,9 +56,9 @@ namespace IslandAlgorithm {
         }
 
         // Order from hi-to-lo energy.
-        seedTowers.sort(moreEnergy);
+        seedTowers.sort(_MoreEnergy);
 
-        PrintSeeds(seedTowers);
+        _PrintSeeds(seedTowers);
         return seedTowers;
     }
 
@@ -68,17 +70,13 @@ namespace IslandAlgorithm {
         TowerMap clusteredTowers;
         int clusterID = 0;
         foreach (IslandAlgorithmTower& seed, seedTowers) {
-            clusteredTowers.insert(std::make_pair(clusterID, seed));
             _PrintTowerMsg(seed, clusteredTowers.size(), "SEED");
+            clusteredTowers.insert(std::make_pair(clusterID, seed));
             int currBinPhi   = seed.getBinPhi();
             int currBinEta   = seed.getBinEta();
 
-            std::vector<int> deltaBins;
-            deltaBins.push_back(2);
-            deltaBins.push_back(1);
-            deltaBins.push_back(0);
-            deltaBins.push_back(-1);
-            deltaBins.push_back(-2);
+            int deltaVals[] = {2, 1, 0, -1, -2};
+            std::vector<int> deltaBins (deltaVals, deltaVals + sizeof(deltaVals) / sizeof(int));
             foreach (int& deltaPhiBin, deltaBins) {
                 foreach (int& deltaEtaBin, deltaBins) {
                     int binPhi = currBinPhi + deltaPhiBin;
@@ -94,7 +92,6 @@ namespace IslandAlgorithm {
             }
             clusterID++;
         }
-
         return clusteredTowers;
     }
 
@@ -111,11 +108,17 @@ namespace IslandAlgorithm {
                                 RTContainer*        _towers, 
                                 RTGeomContainer*    _towerGeom) {
 
+        // Initialize/declare required new objects.
         int clusterID = 0;
+        numDoubleCountsAvoided = 0; 
+        usedTowerIDs.clear();
         TowerMap clusteredTowers;
+
         foreach (IslandAlgorithmTower& seed, seedTowers) {
             // Begin by inserting the seed tower, which defines a cluster.
             clusteredTowers.insert(std::make_pair(clusterID, seed));
+            usedTowerIDs.insert(seed.getID());
+
             _PrintTowerMsg(seed, clusteredTowers.size(), "SEED");
             _SearchPhi("north", seed, clusterID, _towers, clusteredTowers, _towerGeom);
             _SearchPhi("south", seed, clusterID, _towers, clusteredTowers, _towerGeom);
@@ -123,8 +126,10 @@ namespace IslandAlgorithm {
             _SearchEta("east", seed, clusterID, _towers, clusteredTowers, _towerGeom);
             clusterID++;
         }
+
         return clusteredTowers;
     }
+
 
     /* -------------------------------------------------------------------------
        _SearchPhi
@@ -139,13 +144,19 @@ namespace IslandAlgorithm {
         int currBinEta   = currentTower.getBinEta();
 
         // Get next tower info to decide if we should add it.
-        RawTower* nextTower = _towers->getTower(currBinEta, _movePhi(direction, currBinPhi));
+        RawTower* nextTower = _towers->getTower(currBinEta, _MovePhi(direction, currBinPhi, _towerGeom));
 
         // Keep doing this until energy increase or hole.
         if (nextTower && currEnergy > nextTower->get_energy()) {
             IslandAlgorithmTower towerHelper(nextTower);
             towerHelper.setCenter(_towerGeom);
+
+            // Terminate search if encounter tower that has already been clustered.
+            if (_TowerAlreadyClustered(towerHelper)) return;
+            // Otherwise, mark it as clustered and insert it into the clusteredTowers map.
+            usedTowerIDs.insert(towerHelper.getID());
             clusteredTowers.insert(std::make_pair(clusterID, towerHelper));
+
             _PrintTowerMsg(towerHelper, clusteredTowers.size(), "PHI");
             _SearchPhi(direction, towerHelper, clusterID, _towers, clusteredTowers, _towerGeom);
         }
@@ -164,12 +175,18 @@ namespace IslandAlgorithm {
         int currBinPhi   = currentTower.getBinPhi();
         float currEnergy = currentTower.getEnergy();
 
-        if (_moveEta(direction, currBinEta) != -1) {
+        if (_MoveEta(direction, currBinEta, _towerGeom) != -1) {
             RawTower* nextTower = _towers->getTower(currBinEta, currBinPhi);
             if (nextTower && currEnergy > nextTower->get_energy()) {
                 IslandAlgorithmTower towerHelper(nextTower);
                 towerHelper.setCenter(_towerGeom);
+
+                // Terminate search if encounter tower that has already been clustered.
+                if (_TowerAlreadyClustered(towerHelper)) return;
+                // Otherwise, mark it as clustered and insert it into the clusteredTowers map.
+                usedTowerIDs.insert(towerHelper.getID());
                 clusteredTowers.insert(std::make_pair(clusterID, towerHelper));
+
                 _PrintTowerMsg(towerHelper, clusteredTowers.size(), "ETA");
                 _SearchPhi("north", towerHelper, clusterID, _towers, clusteredTowers, _towerGeom);
                 _SearchPhi("south", towerHelper, clusterID, _towers, clusteredTowers, _towerGeom);
@@ -178,31 +195,32 @@ namespace IslandAlgorithm {
         }
     }
 
-    int _movePhi(std::string direction, int& currBinPhi) { 
-        if (direction == "north")       currBinPhi = (currBinPhi != IslandAlgorithmTower::getMaxPhiBin()) ? currBinPhi+1 : 1;
+    int _MovePhi(std::string direction, int& currBinPhi, RTGeomContainer* _towerGeom) { 
+        if (direction == "north")       currBinPhi = (currBinPhi != _towerGeom->get_phibins()) ? currBinPhi+1 : 1;
         else if (direction == "south")  currBinPhi = (currBinPhi != 1) ? currBinPhi-1 :
-            IslandAlgorithmTower::getMaxPhiBin();
+            _towerGeom->get_phibins();
         return currBinPhi;
     }
 
-    int _moveEta(std::string direction, int& currBinEta) { 
+    int _MoveEta(std::string direction, int& currBinEta, RTGeomContainer* _towerGeom) { 
         if (direction == "west")        currBinEta = (currBinEta != 1) ? currBinEta-1 : -1;
-        else if (direction == "east")   currBinEta = (currBinEta != IslandAlgorithmTower::getMaxEtaBin()) ? currBinEta+1 : -1;
+        else if (direction == "east")   currBinEta = (currBinEta != _towerGeom->get_etabins()) ? currBinEta+1 : -1;
         return currBinEta;
     }
 
+
     // A simple comparator that orders IslandAlgorithmTowers in order of INCREASING energy.
-    bool lessEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2) { 
+    bool _LessEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2) { 
         return tower1.getEnergy() < tower2.getEnergy(); 
     }
 
     // A simple comparator that orders IslandAlgorithmTowers in order of DECREASING energy.
-    bool moreEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2) {
-        return !lessEnergy(tower1, tower2);
+    bool _MoreEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2) {
+        return !_LessEnergy(tower1, tower2);
     }
 
     // Essentially a 'ToString' method for a list of seed towers.
-    void PrintSeeds(std::list<IslandAlgorithmTower>& seeds) {
+    void _PrintSeeds(std::list<IslandAlgorithmTower>& seeds) {
         foreach (IslandAlgorithmTower& seed, seeds) {
             cout << "seed (energy, eta, phi) = (" 
                  << seed.getEnergy() << ", "
@@ -212,13 +230,29 @@ namespace IslandAlgorithm {
         }
     }
 
-    void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* phiOrEta) {
-        cout << index << ". [" << phiOrEta << "] "
+
+    void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* towerType) {
+        cout << index << ". [" << towerType << "] "
              << "Inserted towerID "  << tower.getID()     << endl
              << "\tEnergy="       << tower.getEnergy() << "; "
              << "Eta="           << tower.getEtaCenter() << "; "
              << "Phi="           << tower.getPhiCenter() 
              << endl;
+    }
+
+    bool _TowerAlreadyClustered(IslandAlgorithmTower towerHelper) {
+        bool res = (usedTowerIDs.find(towerHelper.getID()) != usedTowerIDs.end());
+        if (res) _PrintDebugMsg(towerHelper);
+        return res;
+    }
+
+    void _PrintDebugMsg(IslandAlgorithmTower towerHelper) {  
+        numDoubleCountsAvoided++;
+        cout << "\n -------------------------------------------------------- "  << endl
+             << " DOUBLE-COUNT "    << numDoubleCountsAvoided << " AVOIDED. "   << endl
+             << "Tower ID:\t"       << towerHelper.getID()              << endl
+             << "Tower Eta:\t"      << towerHelper.getEtaCenter()       << endl
+             << "Tower Phi:\t"      << towerHelper.getPhiCenter()       << endl;
     }
 
 }

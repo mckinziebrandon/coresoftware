@@ -23,21 +23,28 @@ namespace IslandAlgorithm {
 
     typedef std::multimap<int, IslandAlgorithmTower>    TowerMap;
     typedef std::pair<const int, IslandAlgorithmTower>  TowerPair;
-    typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
+    //typedef std::pair<const unsigned int, RawTower*> RawTowerPair;
+
 
     // The two main workhorse functions of the island algorithm. 
     std::list<IslandAlgorithmTower> GetSeedTowers(RTContainer* _towers, 
                                       RTGeomContainer* _towerGeom, 
                                       float _threshold=0.);
 
-    // Make 5x5 clusters centered on each seed. 
-    TowerMap GetSimpleClusters(std::list<IslandAlgorithmTower> seedTowers, 
-                                RTContainer*        _towers, 
-                                RTGeomContainer*    _towerGeom);
 
     TowerMap GetClusteredTowers(std::list<IslandAlgorithmTower> seedTowers, 
                                 RTContainer* _towers, 
                                 RTGeomContainer* _towerGeom);
+
+    // Alternative to GetClusteredTowers; Make 5x5 clusters centered on each seed. 
+    TowerMap GetSimpleClusters(std::list<IslandAlgorithmTower> seedTowers, 
+                                RTContainer*        _towers, 
+                                RTGeomContainer*    _towerGeom);
+
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
 
     // Collect towers in specified phi/eta direction for specified cluster.
     void _SearchPhi(std::string direction,       IslandAlgorithmTower           currentTower,
@@ -48,15 +55,22 @@ namespace IslandAlgorithm {
                     TowerMap&   clusteredTowers, RTGeomContainer*   _towerGeom);
 
     // Advance phi/eta depending on current location.
-    int _movePhi(std::string direction, int& currBinPhi);
-    int _moveEta(std::string direction, int& currBinEta);
-    // Comparators for sorting.
-    bool lessEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
-    bool moreEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
-    // Basic print function for energy, etacenter, phicenter.
-    void PrintSeeds(std::list<IslandAlgorithmTower>& seeds);
-    void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* phiOrEta);
+    //int _MovePhi(std::string direction, int& currBinPhi, );
+    int _MovePhi(std::string direction, int& currBinPhi, RTGeomContainer* _towerGeom);
+    int _MoveEta(std::string direction, int& currBinEta, RTGeomContainer* _towerGeom);
+    //int _MoveEta(std::string direction, int& currBinEta);
 
+    // Comparators for sorting.
+    bool _LessEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
+    bool _MoreEnergy(IslandAlgorithmTower tower1, IslandAlgorithmTower tower2);
+
+    // Tell whether or not a tower has been assigned to a cluster this event.
+    bool _TowerAlreadyClustered(IslandAlgorithmTower towerHelper);
+
+    // Basic print function for energy, etacenter, phicenter.
+    void _PrintSeeds(std::list<IslandAlgorithmTower>& seeds);
+    void _PrintTowerMsg(IslandAlgorithmTower tower, int index, const char* towerType);
+    void _PrintDebugMsg(IslandAlgorithmTower towerHelper);
 
 }
 
